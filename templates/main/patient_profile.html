@@ -1,0 +1,73 @@
+{% extends 'main/base.html' %}
+{% block content %}
+
+<div class="container mt-4">
+
+    <!-- PROFILE CARD -->
+    <div class="card shadow-lg border-0 p-4">
+
+        <div class="text-center mb-4">
+            <div class="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center"
+                 style="width:80px;height:80px;font-size:30px;">
+                {{ profile_user.username|first|upper }}
+            </div>
+            <h3 class="mt-2">{{ profile_user.username }}</h3>
+            <p class="text-muted">{{ profile.role|title }}</p>
+        </div>
+
+        <!-- DETAILS GRID -->
+        <div class="row text-center">
+
+            <div class="col-md-4 mb-3">
+                <div class="card p-3 shadow-sm">
+                    <h6>Age</h6>
+                    <h5>{{ profile.age|default:"-" }}</h5>
+                </div>
+            </div>
+
+            <div class="col-md-4 mb-3">
+                <div class="card p-3 shadow-sm">
+                    <h6>Gender</h6>
+                    <h5>{{ profile.gender|default:"-" }}</h5>
+                </div>
+            </div>
+
+            <div class="col-md-4 mb-3">
+                <div class="card p-3 shadow-sm">
+                    <h6>Phone</h6>
+                    <h5>{{ profile.phone|default:"-" }}</h5>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ADDRESS -->
+        <div class="card p-3 shadow-sm mt-3">
+            <h6>Address</h6>
+            <p>{{ profile.address|default:"Not provided" }}</p>
+        </div>
+
+        <!-- MEDICAL HISTORY -->
+        <div class="card p-3 shadow-sm mt-3">
+            <h6>Medical History</h6>
+            <p>{{ profile.medical_history|default:"No history added" }}</p>
+        </div>
+
+        <!-- ACTION -->
+        <div class="text-center mt-4">
+            {% if request.user == profile_user %}
+            <a href="{% url 'edit_profile' %}" class="btn btn-primary">
+                ✏ Edit Profile
+            </a>
+            {% endif %}
+
+            <button onclick="history.back()" class="btn btn-secondary">
+                ⬅ Back
+            </button>
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

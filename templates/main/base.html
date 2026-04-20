@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Pill Dispenser</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        :root {
+            --bg: #f5f7fb;
+            --text: #000;
+        }
+
+        .dark-mode {
+            --bg: #121212;
+            --text: #fff;
+        }
+
+        .navbar {
+            background-color: #0d6efd;
+        }
+
+        .nav-link, .navbar-brand {
+            color: white !important;
+            margin-left: 15px;
+        }
+
+        /* Hide Google translate top bar */
+        .goog-te-banner-frame.skiptranslate {
+            display: none !important;
+        }
+
+        body {
+            top: 0px !important;
+        }
+
+        /*  Notification Animation */
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<nav class="navbar px-4">
+    <div class="container-fluid">
+
+        <a class="navbar-brand" href="{% url 'home' %}">Pill Dispenser</a>
+
+        <div class="d-flex align-items-center">
+
+            <!-- 🌐 LANGUAGE BUTTONS -->
+            <button onclick="translateToHindi()" class="btn btn-warning btn-sm me-2">
+                हिन्दी
+            </button>
+
+            <button onclick="translateToEnglish()" class="btn btn-light btn-sm me-3">
+                English
+            </button>
+
+            <!-- 🎨 THEME BUTTON -->
+            <button onclick="toggleTheme()" class="btn btn-light btn-sm me-3">
+                🌙 Theme
+            </button>
+
+            <a class="nav-link" href="{% url 'home' %}">Dashboard</a>
+            <a class="nav-link" href="{% url 'logout' %}">Logout</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    {% block content %}{% endblock %}
+</div>
+
+<!-- 🌐 Google Translate (hidden) -->
+<div id="google_translate_element" style="display:none;"></div>
+
+<script>
+function googleTranslateElementInit() {
+    new google.translate.TranslateElement({
+        pageLanguage: 'en',
+        includedLanguages: 'hi'
+    }, 'google_translate_element');
+}
+</script>
+
+<script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+<!-- 🌐 LANGUAGE CONTROL -->
+<script>
+function translateToHindi() {
+    document.cookie = "googtrans=/en/hi;path=/;";
+    location.reload();
+}
+
+function translateToEnglish() {
+    document.cookie = "googtrans=;path=/;expires=Thu, 01 Jan 1970 00:00:00 UTC;";
+    document.cookie = "googtrans=;path=/;domain=" + window.location.hostname + ";expires=Thu, 01 Jan 1970 00:00:00 UTC;";
+    location.reload();
+}
+</script>
+
+<!-- 🎨 THEME -->
+<script>
+function toggleTheme() {
+    document.body.classList.toggle("dark-mode");
+    localStorage.setItem("theme", document.body.classList.contains("dark-mode"));
+}
+
+if (localStorage.getItem("theme") === "true") {
+    document.body.classList.add("dark-mode");
+}
+</script>
+
+<!-- 🔔 UPDATED MEDICINE NOTIFICATION -->
+<div id="medicinePopup" style="
+    display:none;
+    position:fixed;
+    bottom:30px;
+    right:30px;
+    width:320px;
+    background:#dc3545;
+    color:white;
+    padding:20px;
+    border-radius:15px;
+    box-shadow:0 8px 25px rgba(0,0,0,0.3);
+    z-index:9999;
+    font-size:16px;
+    animation: slideIn 0.5s ease;
+">
+    <h5>Medicine Reminder</h5>
+    <p>It's time to take your medicine!</p>
+    <button onclick="closePopup()" class="btn btn-light btn-sm">OK</button>
+</div>
+
+<script>
+// Example medicine times
+let medicineTimes = ["09:00", "14:00", "20:00"];  
+
+function checkMedicineTime() {
+    let now = new Date();
+    let currentTime = now.getHours().toString().padStart(2, '0') + ":" +
+                      now.getMinutes().toString().padStart(2, '0');
+
+    if (medicineTimes.includes(currentTime)) {
+        showNotification();
+    }
+}
+
+function showNotification() {
+    let popup = document.getElementById("medicinePopup");
+    popup.style.display = "block";
+
+    // stays for 15 sec now
+    setTimeout(() => {
+        popup.style.display = "none";
+    }, 15000);
+}
+
+function closePopup() {
+    document.getElementById("medicinePopup").style.display = "none";
+}
+
+// check every 20 sec
+setInterval(checkMedicineTime, 20000);
+</script>
+
+</body>
+</html>

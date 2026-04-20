@@ -1,0 +1,224 @@
+{% extends 'main/base.html' %}
+{% load i18n %}
+{% block content %}
+
+<div class="container mt-4">
+
+<h2 class="mb-4 text-center"> {% trans "Patient Dashboard" %}</h2>
+
+<!-- SUMMARY CARDS -->
+<div class="row text-center mb-4">
+    <div class="col-md-3 col-6 mb-2">
+        <div class="card p-3 shadow border-0 bg-light">
+            <h6>{% trans "Total" %}</h6>
+            <h3>{{ medicines|length }}</h3>
+        </div>
+    </div>
+    <div class="col-md-3 col-6 mb-2">
+        <div class="card p-3 shadow border-0 bg-success text-white">
+            <h6>{% trans "Taken" %}</h6>
+            <h3>{{ taken_count }}</h3>
+        </div>
+    </div>
+    <div class="col-md-3 col-6 mb-2">
+        <div class="card p-3 shadow border-0 bg-danger text-white">
+            <h6>{% trans "Missed" %}</h6>
+            <h3>{{ missed_count }}</h3>
+        </div>
+    </div>
+    <div class="col-md-3 col-6 mb-2">
+        <div class="card p-3 shadow border-0 bg-warning">
+            <h6>{% trans "Pending" %}</h6>
+            <h3>{{ pending_count }}</h3>
+        </div>
+    </div>
+</div>
+
+<!-- CHART + CAREGIVER ASSIGN -->
+<div class="row mb-4">
+    <div class="col-md-4 mb-3">
+        <div class="card p-3 shadow text-center">
+            <canvas id="chart"></canvas>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="card p-3 shadow">
+            <h5>Assign Caregiver</h5>
+            {% if profile.caregiver %}
+                <p>Current Caregiver: <strong>{{ profile.caregiver.username }}</strong></p>
+            {% else %}
+                <p>No caregiver assigned yet.</p>
+            {% endif %}
+            <form method="POST">
+                {% csrf_token %}
+                <div class="d-flex gap-2">
+                    <select name="caregiver" class="form-select">
+                        <option value="">-- Select Caregiver --</option>
+                        {% for cg in caregivers %}
+                            <option value="{{ cg.id }}" {% if profile.caregiver == cg %}selected{% endif %}>
+                                {{ cg.username }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="btn btn-primary">Assign</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ✅ PRESCRIPTION IMAGE — shown ONCE as its own card, not per medicine -->
+<div class="card shadow p-3 mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <h5 class="mb-0"> My Prescription</h5>
+        <a href="{% url 'upload_prescription' %}" class="btn btn-outline-primary btn-sm">
+            {% if profile.prescription_image %} Replace{% else %} Upload{% endif %}
+        </a>
+    </div>
+
+    {% if profile.prescription_image %}
+        <div class="text-center">
+            <img src="{{ profile.prescription_image.url }}"
+                 alt="Prescription"
+                 onclick="openImage('{{ profile.prescription_image.url }}')"
+                 style="max-width:100%; max-height:280px; border-radius:10px;
+                        border:1px solid #dee2e6; object-fit:contain; cursor:pointer;"
+                 title="Click to view full size">
+            <br>
+            <small class="text-muted">Click image to view full size</small>
+            <br>
+            <a href="{% url 'delete_prescription' %}"
+               class="btn btn-outline-danger btn-sm mt-2"
+               onclick="return confirm('Remove prescription image?')">
+               🗑 Remove
+            </a>
+        </div>
+    {% else %}
+        <p class="text-muted mb-0">No prescription uploaded yet.
+            <a href="{% url 'upload_prescription' %}">Upload now</a>
+        </p>
+    {% endif %}
+</div>
+
+<!-- ADD MEDICINE BUTTON -->
+<div class="mb-3 text-end">
+    <a href="{% url 'patient_add_medicine' %}" class="btn btn-success px-4">➕ Add Medicine</a>
+</div>
+
+<!-- MEDICINES LIST (DATE-WISE) -->
+<div class="card shadow p-3 mb-4">
+    <h5 class="mb-3"> {% trans "Your Medicines" %}</h5>
+
+    {% regroup medicines by date as dated_medicines %}
+
+    {% for group in dated_medicines %}
+        <div class="bg-light p-2 mt-3 rounded d-flex justify-content-between align-items-center"
+             data-bs-toggle="collapse" data-bs-target="#date{{ forloop.counter }}" style="cursor:pointer;">
+            <strong>
+                
+                {% if group.grouper == today %}Today
+                {% elif group.grouper == yesterday %}Yesterday
+                {% else %}{{ group.grouper|date:"F d, Y" }}{% endif %}
+            </strong>
+            <span>▼</span>
+        </div>
+
+        <div id="date{{ forloop.counter }}" class="collapse show">
+            {% for med in group.list %}
+            <div class="d-flex justify-content-between align-items-start border-bottom py-3">
+                <div>
+                    <h6 class="mb-0">{{ med.name }}</h6>
+                    {% if med.dosage %}<small class="text-muted"> {{ med.dosage }}</small><br>{% endif %}
+                    <small class="text-muted"> {{ med.time|time:"H:i" }}</small>
+                </div>
+                <div class="text-end">
+                    <span class="badge
+                        {% if med.status == 'taken' %}bg-success
+                        {% elif med.status == 'missed' %}bg-danger
+                        {% else %}bg-warning text-dark{% endif %}">
+                        {% if med.status == 'taken' %}✔ Taken
+                        {% elif med.status == 'missed' %}✖ Missed
+                        {% else %}⏳ Pending{% endif %}
+                    </span>
+                    {% if med.status == 'pending' %}
+                    <div class="mt-2">
+                        <a href="{% url 'take_medicine' med.id %}" class="btn btn-success btn-sm">✔</a>
+                        <a href="{% url 'mark_missed' med.id %}" class="btn btn-danger btn-sm">✖</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% empty %}
+        <p class="text-center text-muted">{% trans "No medicines assigned." %}</p>
+    {% endfor %}
+</div>
+
+<!-- BOTTOM BUTTONS -->
+<div class="text-center mb-4 d-flex justify-content-center gap-3 flex-wrap">
+    <a href="{% url 'dispenser_status' %}" class="btn btn-dark"> View Dispenser</a>
+    <a href="{% url 'edit_profile' %}" class="btn btn-outline-secondary"> Edit My Details</a>
+    <a href="{% url 'patient_profile' request.user.id %}" class="btn btn-outline-primary">👤 View My Profile</a>
+</div>
+
+</div>
+
+<!-- FULL IMAGE MODAL -->
+<div id="imgModal" onclick="closeModal()"
+     style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.88);
+            z-index:9999; justify-content:center; align-items:center; cursor:zoom-out;">
+    <img id="imgModalSrc" src="" alt="Prescription"
+         style="max-width:92vw; max-height:92vh; border-radius:12px;">
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const ctx = document.getElementById('chart');
+    if (ctx) {
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['{% trans "Taken" %}', '{% trans "Missed" %}', '{% trans "Pending" %}'],
+                datasets: [{
+                    data: [{{ taken_count|default:0 }}, {{ missed_count|default:0 }}, {{ pending_count|default:0 }}],
+                    backgroundColor: ['rgba(75,192,192,0.7)', 'rgba(255,99,132,0.7)', 'rgba(255,206,86,0.7)']
+                }]
+            },
+            options: { plugins: { legend: { position: 'bottom' } } }
+        });
+    }
+});
+
+function openImage(url) {
+    document.getElementById('imgModalSrc').src = url;
+    document.getElementById('imgModal').style.display = 'flex';
+}
+function closeModal() {
+    document.getElementById('imgModal').style.display = 'none';
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+</script>
+
+<script>
+let medicinesList = [
+    {% for med in medicines %}
+    { id: "{{ med.id }}", name: "{{ med.name }}", time: "{{ med.time|time:'H:i' }}", status: "{{ med.status }}" },
+    {% endfor %}
+];
+let shown = {};
+function checkMedicineTime() {
+    let now = new Date();
+    let t = String(now.getHours()).padStart(2,'0') + ":" + String(now.getMinutes()).padStart(2,'0');
+    medicinesList.forEach(med => {
+        if (med.time === t && med.status === "pending" && !shown[med.id]) {
+            shown[med.id] = true;
+            showNotification(med.name, med.id);
+        }
+    });
+}
+setInterval(checkMedicineTime, 10000);
+</script>
+
+{% endblock %}

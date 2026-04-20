@@ -1,0 +1,130 @@
+{% extends 'main/base.html' %}
+{% block content %}
+
+<div class="container mt-4">
+
+    <!-- HEADER -->
+    <h2 class="mb-4 text-center"> Doctor Dashboard</h2>
+
+    <!-- SEARCH BAR -->
+    <div class="input-group mb-3">
+        <span class="input-group-text">🔍</span>
+        <input type="text" id="patientSearch" class="form-control" placeholder="Search patient...">
+    </div>
+
+    <!-- PATIENT SECTION -->
+    <div class="card shadow mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Patients</h5>
+        </div>
+
+        <div class="card-body">
+            <div class="row">
+                {% for patient in patients %}
+                <div class="col-md-4 mb-4 patient-card">
+                    <div class="card p-3 shadow-sm h-100">
+                        <h5 class="mb-2">{{ patient.username }}</h5>
+
+                        <!-- ✅ Prescription image shown once per patient -->
+                        {% if patient.profile.prescription_image %}
+                        <div class="text-center mb-2">
+                            <img src="{{ patient.profile.prescription_image.url }}"
+                                 alt="Prescription"
+                                 onclick="openImage('{{ patient.profile.prescription_image.url }}')"
+                                 style="width:100%; max-height:110px; object-fit:contain;
+                                        border-radius:8px; border:1px solid #dee2e6; cursor:pointer;"
+                                 title="Click to view full prescription">
+                            <small class="text-muted d-block mt-1">📋 Prescription on file</small>
+                        </div>
+                        {% else %}
+                        <div class="text-center mb-2">
+                            <small class="text-muted">No prescription uploaded</small>
+                        </div>
+                        {% endif %}
+
+                        <!-- Action buttons -->
+                        <div class="d-flex flex-wrap gap-2 mt-auto">
+                            <a href="{% url 'patient_detail' patient.id %}"
+                               class="btn btn-sm btn-info text-white">
+                                View
+                            </a>
+                            <a href="{% url 'add_medicine' patient.id %}"
+                               class="btn btn-sm btn-success">
+                               ➕ Add
+                            </a>
+                            <a href="{% url 'upload_prescription_for' patient.id %}"
+                               class="btn btn-sm btn-outline-primary">
+                                 Rx
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <p>No patients assigned.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- MEDICINE SECTION -->
+    <div class="card shadow">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">Prescriptions</h5>
+        </div>
+
+        <div class="card-body">
+            {% for med in medicines %}
+            <div class="card p-3 mb-3 shadow-sm border-0">
+
+                <div class="d-flex justify-content-between">
+                    <h5 class="mb-1">{{ med.name }}</h5>
+
+                    <span class="badge
+                        {% if med.status == 'taken' %}bg-success
+                        {% elif med.status == 'missed' %}bg-danger
+                        {% else %}bg-warning text-dark{% endif %}">
+                        {{ med.status|title }}
+                    </span>
+                </div>
+
+                <p class="mb-1"><strong>Patient:</strong> {{ med.patient.username }}</p>
+                <p class="mb-1"><strong>Dosage:</strong> {{ med.dosage }}</p>
+                <p class="mb-0"><strong>Time:</strong> {{ med.time }}</p>
+
+            </div>
+            {% empty %}
+            <p>No prescriptions yet.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+</div>
+
+<!-- FULL IMAGE MODAL -->
+<div id="imgModal" onclick="closeModal()"
+     style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.88);
+            z-index:9999; justify-content:center; align-items:center; cursor:zoom-out;">
+    <img id="imgModalSrc" src="" alt="Prescription"
+         style="max-width:92vw; max-height:92vh; border-radius:12px;">
+</div>
+
+<script>
+function openImage(url) {
+    document.getElementById('imgModalSrc').src = url;
+    document.getElementById('imgModal').style.display = 'flex';
+}
+function closeModal() {
+    document.getElementById('imgModal').style.display = 'none';
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+// Search
+document.getElementById("patientSearch").addEventListener("keyup", function() {
+    let filter = this.value.toLowerCase();
+    document.querySelectorAll(".patient-card").forEach(function(card) {
+        card.style.display = card.innerText.toLowerCase().includes(filter) ? "" : "none";
+    });
+});
+</script>
+
+{% endblock %}

@@ -1,0 +1,130 @@
+{% extends 'main/base.html' %}
+{% load i18n %}
+{% block content %}
+
+<h2 class="mb-4"> {% trans "Caregiver Dashboard" %}</h2>
+
+<!-- SUMMARY -->
+<div class="row text-center mb-4">
+    <div class="col">
+        <div class="card p-3 shadow">
+            <h6>{% trans "Total Medicines" %}</h6>
+            <h3>{{ medicines|length }}</h3>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card p-3 shadow">
+            <h6>{% trans "Taken" %}</h6>
+            <h3>{{ taken_count }}</h3>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card p-3 shadow">
+            <h6>{% trans "Missed" %}</h6>
+            <h3>{{ missed_count }}</h3>
+        </div>
+    </div>
+</div>
+
+<!-- ✅ PATIENTS LIST — prescription image shown ONCE per patient card -->
+{% if patients %}
+<div class="card shadow mb-4 p-3">
+    <h5 class="mb-3"> Your Patients</h5>
+    <div class="row">
+        {% for patient in patients %}
+        <div class="col-md-4 mb-4">
+            <div class="card p-3 shadow-sm h-100">
+                <h6 class="mb-2">{{ patient.username }}</h6>
+
+                <!-- ✅ Prescription image for THIS patient — shown once here -->
+                {% if patient.profile.prescription_image %}
+                <div class="text-center mb-2">
+                    <img src="{{ patient.profile.prescription_image.url }}"
+                         alt="Prescription"
+                         onclick="openImage('{{ patient.profile.prescription_image.url }}')"
+                         style="width:100%; max-height:120px; object-fit:contain;
+                                border-radius:8px; border:1px solid #dee2e6; cursor:pointer;"
+                         title="Click to view full prescription">
+                    <small class="text-muted d-block mt-1">📋 Prescription on file</small>
+                </div>
+                {% else %}
+                <div class="text-center mb-2">
+                    <small class="text-muted">No prescription uploaded</small>
+                </div>
+                {% endif %}
+
+                <div class="d-flex gap-2 mt-auto flex-wrap">
+                    <a href="{% url 'caregiver_add_medicine' patient.id %}" class="btn btn-success btn-sm">
+                        ➕ Add Medicine
+                    </a>
+                    <a href="{% url 'upload_prescription_for' patient.id %}" class="btn btn-outline-primary btn-sm">
+                         Prescription
+                    </a>
+                    <a href="{% url 'patient_profile' patient.id %}" class="btn btn-outline-secondary btn-sm">
+                        👤 Profile
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- MEDICINES LIST — no image here, image is on the patient card above -->
+{% for med in medicines %}
+<div class="card p-3 mb-3 shadow">
+    <div class="d-flex justify-content-between align-items-start">
+        <div>
+            <h5 class="mb-0">{{ med.name }}
+                {% if med.dosage %}<small class="text-muted fs-6">— {{ med.dosage }}</small>{% endif %}
+            </h5>
+            <p class="mb-1 mt-1"><strong>{% trans "Patient" %}:</strong> {{ med.patient.username }}</p>
+            <p class="mb-0"><strong>{% trans "Time" %}:</strong> {{ med.time|time:"H:i" }}</p>
+        </div>
+        <div class="text-end">
+            <span class="badge
+                {% if med.status == 'taken' %}bg-success
+                {% elif med.status == 'missed' %}bg-danger
+                {% else %}bg-warning text-dark{% endif %}">
+                {% if med.status == 'taken' %}Taken
+                {% elif med.status == 'missed' %}Missed
+                {% else %}Pending{% endif %}
+            </span>
+            {% if med.status == 'pending' %}
+            <div class="mt-2">
+                <a href="{% url 'take_medicine' med.id %}" class="btn btn-success btn-sm">✔ Take</a>
+                <a href="{% url 'mark_missed' med.id %}" class="btn btn-danger btn-sm">✖ Missed</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% empty %}
+<p class="text-muted">{% trans "No medicines assigned for your patients." %}</p>
+{% endfor %}
+
+<div class="mt-4">
+    <a href="{% url 'dispenser_status' %}" class="btn btn-dark"> View Dispenser</a>
+</div>
+
+<!-- FULL IMAGE MODAL -->
+<div id="imgModal" onclick="closeModal()"
+     style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.88);
+            z-index:9999; justify-content:center; align-items:center; cursor:zoom-out;">
+    <img id="imgModalSrc" src="" alt="Prescription"
+         style="max-width:92vw; max-height:92vh; border-radius:12px;">
+</div>
+
+<script>
+function openImage(url) {
+    document.getElementById('imgModalSrc').src = url;
+    document.getElementById('imgModal').style.display = 'flex';
+}
+function closeModal() {
+    document.getElementById('imgModal').style.display = 'none';
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+</script>
+
+{% endblock %}

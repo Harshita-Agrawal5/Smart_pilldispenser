@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Signup</title>
+    <style>
+        body {
+            font-family: Arial;
+            background: #fce4ec;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .box {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+        }
+        input {
+            display: block;
+            margin: 10px 0;
+            padding: 10px;
+            width: 220px;
+        }
+        button {
+            padding: 10px;
+            background: #e91e63;
+            color: white;
+            border: none;
+            width: 100%;
+        }
+        a {
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="box">
+    <h2>Create Account</h2>
+
+   <form method="POST">
+    {% csrf_token %}
+
+    <input type="text" name="username" placeholder="Username" required><br><br>
+
+    <input type="password" name="password" placeholder="Password" required><br><br>
+
+    <select name="role" required>
+        <option value="">Select Role</option>
+        <option value="doctor">Doctor</option>
+        <option value="patient">Patient</option>
+        <option value="caregiver">Caregiver</option>
+    </select><br><br>
+
+    <button type="submit">Sign Up</button>
+</form>

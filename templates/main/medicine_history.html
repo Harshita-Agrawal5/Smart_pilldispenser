@@ -1,0 +1,24 @@
+{% extends 'main/base.html' %}
+
+{% block content %}
+<h1> Medicine History</h1>
+
+{% if history %}
+    {% for h in history %}
+        <div class="card">
+            <p><strong>{{ h.medicine.name }}</strong> - {{ h.medicine.dosage }} - {{ h.medicine.time }}</p>
+            <p>Patient: {{ h.medicine.patient.username }}</p>
+            <p>Prescribed by: 
+                {% if h.medicine.prescribed_by %}
+                    {{ h.medicine.prescribed_by.username }}
+                {% else %}
+                    N/A
+                {% endif %}
+            </p>
+            <p>Action: <span class="{{ h.action }}">{{ h.action }}</span> | Timestamp: {{ h.timestamp }}</p>
+        </div>
+    {% endfor %}
+{% else %}
+    <p>No history available.</p>
+{% endif %}
+{% endblock %}

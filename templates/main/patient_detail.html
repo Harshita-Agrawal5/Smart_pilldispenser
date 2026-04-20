@@ -1,0 +1,166 @@
+{% extends 'main/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-3">Patient: {{ patient.username }}</h1>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card text-white bg-success mb-3">
+                <div class="card-header">Taken</div>
+                <div class="card-body"><h3 class="card-title">{{ taken_count }}</h3></div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-danger mb-3">
+                <div class="card-header">Missed</div>
+                <div class="card-body"><h3 class="card-title">{{ missed_count }}</h3></div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-warning mb-3">
+                <div class="card-header">Pending</div>
+                <div class="card-body"><h3 class="card-title">{{ pending_count }}</h3></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ✅ PRESCRIPTION IMAGE — shown once for this patient -->
+    <div class="card shadow p-3 mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h5 class="mb-0">📋 Prescription Image</h5>
+            <div class="d-flex gap-2">
+                <a href="{% url 'upload_prescription_for' patient.id %}"
+                   class="btn btn-outline-primary btn-sm">
+                   {% if patient_profile.prescription_image %} Replace{% else %} Upload{% endif %}
+                </a>
+                {% if patient_profile.prescription_image %}
+                <a href="{% url 'delete_prescription_for' patient.id %}"
+                   class="btn btn-outline-danger btn-sm"
+                   onclick="return confirm('Remove prescription image?')">
+                   🗑 Remove
+                </a>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if patient_profile.prescription_image %}
+        <div class="text-center">
+            <img src="{{ patient_profile.prescription_image.url }}"
+                 alt="Prescription"
+                 onclick="openImage('{{ patient_profile.prescription_image.url }}')"
+                 style="max-width:100%; max-height:300px; border-radius:10px;
+                        border:1px solid #dee2e6; object-fit:contain; cursor:pointer;"
+                 title="Click to view full size">
+            <br><small class="text-muted">Click image to view full size</small>
+        </div>
+        {% else %}
+        <p class="text-muted mb-0">
+            No prescription uploaded yet.
+            <a href="{% url 'upload_prescription_for' patient.id %}">Upload now →</a>
+        </p>
+        {% endif %}
+    </div>
+
+    <!-- Medicine Table -->
+    <h2>Medicines</h2>
+    {% if medicines %}
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Dosage</th>
+                <th>Time</th>
+                <th>Status</th>
+                <th>Notes</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for med in medicines %}
+            <tr>
+                <td>{{ med.name }}</td>
+                <td>{{ med.dosage }}</td>
+                <td>{{ med.time }}</td>
+                <td>
+                    {% if med.status == 'taken' %}
+                        <span class="badge bg-success">Taken</span>
+                    {% elif med.status == 'missed' %}
+                        <span class="badge bg-danger">Missed</span>
+                    {% else %}
+                        <span class="badge bg-warning">Pending</span>
+                    {% endif %}
+                </td>
+                <td>{{ med.notes }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No medicines assigned yet.</p>
+    {% endif %}
+
+    <!-- Actions -->
+    <div class="mt-3 d-flex gap-2 flex-wrap">
+        <a href="{% url 'add_medicine' patient.id %}" class="btn btn-primary">➕ Add Medicine</a>
+        <a href="{% url 'doctor_dashboard' %}" class="btn btn-secondary">← Back to Dashboard</a>
+    </div>
+
+    <!-- Chart -->
+    <div class="mt-5">
+        <canvas id="medicineChart" height="100"></canvas>
+    </div>
+</div>
+
+<!-- FULL IMAGE MODAL -->
+<div id="imgModal" onclick="closeModal()"
+     style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.88);
+            z-index:9999; justify-content:center; align-items:center; cursor:zoom-out;">
+    <img id="imgModalSrc" src="" alt="Prescription"
+         style="max-width:92vw; max-height:92vh; border-radius:12px;">
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const ctx = document.getElementById('medicineChart').getContext('2d');
+new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: ['Taken', 'Missed', 'Pending'],
+        datasets: [{
+            label: 'Medicine Status',
+            data: [{{ taken_count }}, {{ missed_count }}, {{ pending_count }}],
+            backgroundColor: [
+                'rgba(40, 167, 69, 0.7)',
+                'rgba(220, 53, 69, 0.7)',
+                'rgba(255, 193, 7, 0.7)'
+            ],
+            borderColor: [
+                'rgba(40, 167, 69, 1)',
+                'rgba(220, 53, 69, 1)',
+                'rgba(255, 193, 7, 1)'
+            ],
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { display: false },
+            title: { display: true, text: 'Medicine Status Overview' }
+        },
+        scales: { y: { beginAtZero: true, precision: 0 } }
+    }
+});
+
+function openImage(url) {
+    document.getElementById('imgModalSrc').src = url;
+    document.getElementById('imgModal').style.display = 'flex';
+}
+function closeModal() {
+    document.getElementById('imgModal').style.display = 'none';
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+</script>
+
+{% endblock %}
