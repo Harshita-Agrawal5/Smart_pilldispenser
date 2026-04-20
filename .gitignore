@@ -1,11 +1,29 @@
-# .gitignore file — create this in root folder
+# Python
 __pycache__/
 *.pyc
 *.pyo
+*.pyd
+
+# Django
 db.sqlite3
+*.sqlite3
+
+# Media uploads
 media/
-.env
+
+# Virtual environment
 venv/
 env/
-*.egg-info/
+.venv/
+
+# Environment variables
+.env
+*.env
+
+# OS files
 .DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
