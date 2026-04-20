@@ -1,0 +1,11 @@
+# .gitignore file — create this in root folder
+__pycache__/
+*.pyc
+*.pyo
+db.sqlite3
+media/
+.env
+venv/
+env/
+*.egg-info/
+.DS_Store
